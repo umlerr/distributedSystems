@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import umlerr.serviceusers.dto.RegisterDTO;
+import umlerr.serviceusers.model.Users;
 import umlerr.serviceusers.service.UsersService;
 import static umlerr.serviceusers.util.UsersUtils.getUsersRegistered;
 
@@ -26,5 +27,10 @@ public class UsersController {
     @GetMapping("/auth/users")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(usersService.getAllUsers());
+    }
+
+    @PostMapping("/login")
+    public String login(@RequestBody Users users) {
+        return usersService.verify(users);
     }
 }
