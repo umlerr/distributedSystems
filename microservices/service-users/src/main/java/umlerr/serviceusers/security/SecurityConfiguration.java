@@ -1,10 +1,14 @@
 package umlerr.serviceusers.security;
 
 import io.jsonwebtoken.security.Keys;
+import java.util.Base64;
+import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,8 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import umlerr.serviceusers.service.CustomUsersDetailsService;
-import javax.crypto.SecretKey;
-import java.util.Base64;
+import umlerr.serviceusers.service.JWTService;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
@@ -26,11 +29,21 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
-    private final CustomUsersDetailsService customUsersDetailsService;
-    private final JWTFilter jwtFilter;
-
     @Value("${jwt.secret}")
     private String jwtSecret;
+    private final CustomUsersDetailsService customUsersDetailsService;
+
+    @Bean
+    @Lazy
+    @Qualifier("jwtService")
+    public JWTService jwtService(SecretKey jwtSecretKey) {
+        return new JWTService(jwtSecretKey);
+    }
+
+    @Bean
+    public JWTFilter jwtFilter(@Qualifier("jwtService")JWTService jwtService) {
+        return new JWTFilter(jwtService, customUsersDetailsService);
+    }
 
     @Bean
     public SecretKey jwtSecretKey() {
@@ -43,12 +56,12 @@ public class SecurityConfiguration {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(req -> req
-                .requestMatchers("auth/register","login")
+                .requestMatchers("auth/register", "login")
                 .permitAll()
                 .anyRequest().authenticated())
             .httpBasic(withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtFilter(jwtService(jwtSecretKey())), UsernamePasswordAuthenticationFilter.class)
             .build();
     }
 

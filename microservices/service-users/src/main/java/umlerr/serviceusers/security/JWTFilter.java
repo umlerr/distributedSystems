@@ -11,12 +11,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import umlerr.serviceusers.service.CustomUsersDetailsService;
 import umlerr.serviceusers.service.JWTService;
 
-@Component
 @RequiredArgsConstructor
 public class JWTFilter extends OncePerRequestFilter {
 
@@ -28,20 +26,20 @@ public class JWTFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-        HttpServletRequest request,
-        HttpServletResponse response, FilterChain filterChain
+        @NonNull HttpServletRequest request,
+        @NonNull HttpServletResponse response, @NonNull FilterChain filterChain
     )
         throws ServletException, IOException {
 
         String authorizationHeader = request.getHeader(HEADER_STRING);
-        String token = null;
-        String email = null;
 
         if (authorizationHeader == null || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
-            assert authorizationHeader != null;
-            token = authorizationHeader.replace(TOKEN_PREFIX, "");
-            email = jwtService.extractEmail(token);
+            filterChain.doFilter(request, response);
+            return;
         }
+
+        String token = authorizationHeader.replace(TOKEN_PREFIX, "");
+        String email = jwtService.extractEmail(token);
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
