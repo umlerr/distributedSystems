@@ -30,7 +30,12 @@ public class UsersController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody Users users) {
-        return usersService.verify(users);
+    public ResponseEntity<?> login(@RequestBody Users users) {
+        return ResponseEntity.ok(usersService.verify(users));
+    }
+
+    @GetMapping("/login")
+    public ResponseEntity<?> login() {
+        return ResponseEntity.ok("");
     }
 }
