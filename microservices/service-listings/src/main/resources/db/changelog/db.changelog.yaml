@@ -1,0 +1,10 @@
+databaseChangeLog:
+    -   changeSet:
+            id: 1.0.0_1__ADD_LISTINGS
+            author: umlerr
+            changes:
+                - sqlFile:
+                        path: db/changelog/migration/V.1.0.0_1__ADD_LISTINGS.sql
+            rollback:
+                - sqlFile:
+                        path: db/changelog/undoing/U.1.0.0_1__ADD_LISTINGS.sql
