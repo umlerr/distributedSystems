@@ -9,6 +9,7 @@
           <option value="distributedSystems" />
           <option value="distributedSystems" />
           <option value="distributedSystems" />
+          <option value="distributedSystems" />
         </list>
       </option>
       <option name="ignoredPackages">
@@ -16,6 +17,7 @@
           <option value="org.apache.tomcat.embed:tomcat-embed-core:10.1.31" />
           <option value="ch.qos.logback:logback-core:1.5.11" />
           <option value="org.apache.commons:commons-compress:1.21" />
+          <option value="com.google.code.gson:gson:2.1" />
         </list>
       </option>
       <option name="ignoredReasons">
@@ -23,6 +25,7 @@
           <option value="In progress" />
           <option value="In progress" />
           <option value="In progress" />
+          <option value="Not exploitable" />
         </list>
       </option>
     </inspection_tool>
