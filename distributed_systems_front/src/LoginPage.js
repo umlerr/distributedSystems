@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loginMessage, setLoginMessage] = useState("");
-    const navigate = useNavigate(); // Хук для навигации на другую страницу
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("authToken");
+        if (token) navigate("/cars"); // Если уже авторизован, перекидываем на /cars
+    }, [navigate]);
 
     const handleLogin = async () => {
         try {
@@ -21,11 +26,10 @@ function LoginPage() {
             }
 
             const token = await response.text();
-            localStorage.setItem('authToken', token);
+            localStorage.setItem("authToken", token);
             setLoginMessage("Успешная авторизация!");
 
-            // Редирект на страницу с машинами
-            navigate("/cars");
+            navigate("/cars"); // Перенаправление на страницу с машинами
         } catch (error) {
             setLoginMessage(error.message);
         }

@@ -77,8 +77,15 @@ function CarsPage() {
             setNewCar({ vin: "", brand: "", model: "", price: "", year: "", mileage: "" });
             fetchCars(currentPage, pageSize);
         } catch (error) {
-            setErrorMessage(error.message);
+            setErrorMessage("Ошибка при добавлении объявления. Машина с таким VIN уже существует");
+            console.error("Ошибка:", error);
         }
+    };
+
+
+    const handleLogout = () => {
+        localStorage.removeItem("authToken");
+        navigate("/");
     };
 
     const totalPages = Math.ceil(totalCars / pageSize); // Количество страниц
@@ -86,9 +93,16 @@ function CarsPage() {
     return (
         <div>
             <h2>Список машин</h2>
-            <button className="btn btn-success" onClick={() => setShowPopup(true)}>
-                Добавить машину
-            </button>
+
+            {/* Кнопки для выхода и добавления */}
+            <div className="button-container">
+                <button className="btn btn-success" onClick={() => setShowPopup(true)}>
+                    Добавить машину
+                </button>
+                <button className="btn btn-danger" onClick={handleLogout}>
+                    Выйти
+                </button>
+            </div>
 
             {/* Таблица машин */}
             <table className="table table-bordered">
@@ -243,6 +257,8 @@ function CarsPage() {
                     color: red;
                     font-size: 14px;
                 }
+                .button-container { margin-bottom: 20px; }
+                .button-container .btn { margin-right: 10px; }
             `}</style>
         </div>
     );
