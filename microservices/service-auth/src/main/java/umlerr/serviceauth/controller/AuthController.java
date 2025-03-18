@@ -15,7 +15,6 @@ import static umlerr.serviceauth.util.UsersUtils.getUsersRegistered;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -34,10 +33,5 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthDTO authDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.verify(authDTO));
-    }
-
-    @GetMapping("/login")
-    public ResponseEntity<?> login() {
-        return ResponseEntity.status(HttpStatus.OK).body("");
     }
 }

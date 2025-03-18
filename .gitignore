@@ -18,6 +18,7 @@ dependency-reduced-pom.xml
 
 ### Scala SBT
 .bsp
+.env
 
 ### log files ###
 *.log

@@ -10,6 +10,7 @@ import umlerr.servicecars.dto.CarDTO;
 import umlerr.servicecars.dto.CarMapper;
 import umlerr.servicecars.model.Car;
 import umlerr.servicecars.repository.CarsRepository;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import static umlerr.servicecars.util.CarsUtils.getCarNotFound;
@@ -30,6 +31,15 @@ public class CarsService {
     @Transactional(readOnly = true)
     public Page<Car> getCarsByBrand(String brand, int page, int size) {
         return carsRepository.findAllByBrandAndActualTrue(brand, PageRequest.of(page, size));
+    }
+
+    @Transactional(readOnly = true)
+    public Car getCarByVin(String vin) {
+        return carsRepository.findByVin(vin);
+    }
+
+    public List<String> getAllVin() {
+        return carsRepository.findAllVinNumbers();
     }
 
     @Transactional
@@ -60,9 +70,23 @@ public class CarsService {
     }
 
     @Transactional
-    public void addCar(CarDTO carDTO) {
+    public void addCar(CarDTO carDTO, String authorizationHeader) {
+        String token = null;
+        String TOKEN_PREFIX = "Bearer ";
+
+        if (authorizationHeader != null && authorizationHeader.startsWith(TOKEN_PREFIX)) {
+            token = authorizationHeader.replace(TOKEN_PREFIX, "");
+        }
+
+        if (token == null) {
+            throw new IllegalArgumentException("Токен не найден или неверный формат.");
+        }
+
         Car car = carMapper.toEntity(carDTO);
         car = carsRepository.save(car);
-        kafkaTemplate.send("cars-topic", car.getId().toString());
+
+        String carDataJson = String.format("{\"carId\":\"%s\", \"token\":\"%s\"}", car.getId().toString(), token);
+
+        kafkaTemplate.send("cars-topic", carDataJson);
     }
 }

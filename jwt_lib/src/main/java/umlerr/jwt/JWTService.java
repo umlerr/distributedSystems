@@ -1,37 +1,35 @@
-package umlerr.serviceauth.jwt;
+package umlerr.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-@Primary
 @RequiredArgsConstructor
 public class JWTService {
 
-    private final SecretKey jwtSecret;
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     public String generateToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return Jwts.builder()
-            .claims(claims)
+        return Jwts.builder().claim("email", email)
             .subject(email)
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
-            .signWith(getKey())
+            .signWith(jwtSecretKey())
             .compact();
     }
 
-    private SecretKey getKey() {
-        return jwtSecret;
+    public SecretKey jwtSecretKey() {
+        byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractEmail(String token) {
@@ -45,15 +43,15 @@ public class JWTService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-            .verifyWith(getKey())
+            .verifyWith(jwtSecretKey())
             .build()
             .parseSignedClaims(token)
             .getPayload();
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String email = extractEmail(token);
-        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public boolean validateToken(String token, String email) {
+        final String email_from_token = extractEmail(token);
+        return (email_from_token.equals(email) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {

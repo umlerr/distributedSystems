@@ -12,6 +12,7 @@
       <module>microservices/service-auth</module>
       <module>microservices/service-cars</module>
       <module>microservices/service-listings</module>
+      <module>jwt_lib</module>
   </modules>
 
   <properties>

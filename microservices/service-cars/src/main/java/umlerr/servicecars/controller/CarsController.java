@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import umlerr.servicecars.dto.CarDTO;
 import umlerr.servicecars.model.Car;
 import umlerr.servicecars.service.CarsService;
+import java.util.List;
 import java.util.UUID;
 import static umlerr.servicecars.util.CarsUtils.getCarAdded;
 import static umlerr.servicecars.util.CarsUtils.getCarDeleted;
@@ -51,14 +53,24 @@ public class CarsController {
         return ResponseEntity.status(HttpStatus.OK).body(carsService.getCarsCount());
     }
 
-    @GetMapping("/car/{id}")
+    @GetMapping("/car-by-id/{id}")
     public ResponseEntity<?> getCarById(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(carsService.getCarById(id));
     }
 
+    @GetMapping("/car-by-vin/{vin}")
+    public ResponseEntity<?> getCarByVin(@PathVariable String vin) {
+        return ResponseEntity.status(HttpStatus.OK).body(carsService.getCarByVin(vin));
+    }
+
+    @GetMapping("/all-vin")
+    public ResponseEntity<?> getAllVin() {
+        return ResponseEntity.status(HttpStatus.OK).body(carsService.getAllVin());
+    }
+
     @PostMapping("/add-car")
-    public ResponseEntity<?> addCar(@RequestBody CarDTO carDTO) {
-        carsService.addCar(carDTO);
+    public ResponseEntity<?> addCar(@RequestBody CarDTO carDTO, @RequestHeader("Authorization") String authorizationHeader) {
+        carsService.addCar(carDTO, authorizationHeader);
         return ResponseEntity.status(HttpStatus.CREATED).body(getCarAdded(carDTO.getBrand() + " " + carDTO.getModel()));
     }
 
