@@ -9,12 +9,12 @@ function LoginPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("authToken");
-        if (token) navigate("/cars"); // Если уже авторизован, перекидываем на /cars
+        if (token) navigate("/listings"); // Если уже авторизован, перекидываем на /cars
     }, [navigate]);
 
     const handleLogin = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/auth/v1/auth/login", {
+            const response = await fetch("http://localhost:8080/api/auth/v1/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -29,7 +29,7 @@ function LoginPage() {
             localStorage.setItem("authToken", token);
             setLoginMessage("Успешная авторизация!");
 
-            navigate("/cars"); // Перенаправление на страницу с машинами
+            navigate("/listings"); // Перенаправление на страницу с машинами
         } catch (error) {
             setLoginMessage(error.message);
         }

@@ -20,7 +20,7 @@ function AuthRedirect() {
     useEffect(() => {
         const token = localStorage.getItem("authToken");
         if (token) {
-            navigate("/cars");
+            navigate("/listings");
         } else {
             navigate("/login");
         }
@@ -33,11 +33,10 @@ function App() {
     return (
         <Router>
             <div className="container" style={{ textAlign: "center", marginTop: "50px" }}>
-                <h1>React + Spring Boot</h1>
                 <Routes>
                     <Route path="/" element={<AuthRedirect />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/cars" element={<PrivateRoute><CarsPage /></PrivateRoute>} />
+                    <Route path="/listings" element={<PrivateRoute><CarsPage /></PrivateRoute>} />
                 </Routes>
             </div>
         </Router>

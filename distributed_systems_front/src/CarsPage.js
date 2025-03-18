@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 
 function CarsPage() {
     const [cars, setCars] = useState([]);
+    const [carDetails, setCarDetails] = useState({});
+    const [vinSuggestions, setVinSuggestions] = useState([]);
+    const [isVinExist, setIsVinExist] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-    const [totalCars, setTotalCars] = useState(0); // Общее количество машин
+    const [totalCars, setTotalCars] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(""); // Для ошибки
+    const [errorMessage, setErrorMessage] = useState("");
     const [newCar, setNewCar] = useState({
         vin: "",
         brand: "",
@@ -31,12 +34,13 @@ function CarsPage() {
                 return;
             }
 
-            const response = await fetch(`http://localhost:8081/api/cars/v1/cars?page=${page}&size=${size}`, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await fetch(
+                `http://localhost:8082/api/listings/v1/catalog/listings?page=${page}&size=${size}`,
+                {
+                    method: "GET",
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
 
             if (!response.ok) {
                 throw new Error(await response.text());
@@ -44,13 +48,43 @@ function CarsPage() {
 
             const carsData = await response.json();
             setCars(carsData.content || []);
-            setTotalCars(carsData.totalElements); // Сохраняем общее количество машин
+            setTotalCars(carsData.totalElements);
+            carsData.content.forEach((car) => fetchCarDetails(car.carId));
         } catch (error) {
-            console.error("Ошибка при получении машин:", error);
+            console.error("Ошибка при получении списка машин:", error);
         }
     };
 
-    const handleAddCar = async () => {
+    const fetchCarDetails = async (carId) => {
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                navigate("/");
+                return;
+            }
+
+            const response = await fetch(
+                `http://localhost:8081/api/cars/v1/car-by-id/${carId}`,
+                {
+                    method: "GET",
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const carData = await response.json();
+            setCarDetails((prevDetails) => ({ ...prevDetails, [carId]: carData }));
+        } catch (error) {
+            console.error(`Ошибка при получении данных машины ${carId}:`, error);
+        }
+    };
+
+    const handleAddCar = async (e) => {
+        e.preventDefault(); // Останавливаем перезагрузку страницы
+
         setErrorMessage(""); // Очистка предыдущей ошибки перед новой попыткой
         try {
             const token = localStorage.getItem("authToken");
@@ -69,108 +103,73 @@ function CarsPage() {
             });
 
             if (!response.ok) {
+                // Если сервер вернул ошибку, извлекаем текст ошибки
                 const errorText = await response.text();
-                throw new Error(errorText);
-            }
 
-            setShowPopup(false);
-            setNewCar({ vin: "", brand: "", model: "", price: "", year: "", mileage: "" });
-            fetchCars(currentPage, pageSize);
+                // Если код ответа 409 (Conflict), то выводим ошибку, что VIN уже существует
+                if (response.status === 409) {
+                    setErrorMessage(errorText || "Машина с таким VIN номером уже существует");
+                } else {
+                    // Для других ошибок показываем стандартное сообщение
+                    throw new Error(errorText || "Произошла неизвестная ошибка.");
+                }
+            } else {
+                // Если все успешно
+                setShowPopup(false);
+                setNewCar({ vin: "", brand: "", model: "", price: "", year: "", mileage: "" });
+                fetchCars(currentPage, pageSize);
+            }
         } catch (error) {
-            setErrorMessage("Ошибка при добавлении объявления. Машина с таким VIN уже существует");
             console.error("Ошибка:", error);
+            if (!errorMessage) {
+                setErrorMessage("Произошла ошибка при добавлении автомобиля.");
+            }
         }
     };
-
 
     const handleLogout = () => {
         localStorage.removeItem("authToken");
         navigate("/");
     };
 
-    const totalPages = Math.ceil(totalCars / pageSize); // Количество страниц
+
+    const totalPages = Math.ceil(totalCars / pageSize);
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU');
+    };
+
+    const formatPrice = (price) => {
+        return Math.floor(price).toLocaleString();
+    };
 
     return (
-        <div>
-            <h2>Список машин</h2>
+        <div className="container">
+            <h2>Список объявлений</h2>
 
-            {/* Кнопки для выхода и добавления */}
             <div className="button-container">
                 <button className="btn btn-success" onClick={() => setShowPopup(true)}>
-                    Добавить машину
+                    Добавить объявление
                 </button>
                 <button className="btn btn-danger" onClick={handleLogout}>
                     Выйти
                 </button>
             </div>
 
-            {/* Таблица машин */}
-            <table className="table table-bordered">
-                <thead>
-                <tr>
-                    <th>VIN</th>
-                    <th>Бренд</th>
-                    <th>Модель</th>
-                    <th>Цена</th>
-                    <th>Год</th>
-                    <th>Пробег</th>
-                </tr>
-                </thead>
-                <tbody>
-                {cars.length > 0 ? (
-                    cars.map((car, index) => (
-                        <tr key={index}>
-                            <td>{car.vin}</td>
-                            <td>{car.brand}</td>
-                            <td>{car.model}</td>
-                            <td>{car.price}</td>
-                            <td>{car.year}</td>
-                            <td>{car.mileage}</td>
-                        </tr>
-                    ))
-                ) : (
-                    <tr>
-                        <td colSpan="6">Машины не найдены</td>
-                    </tr>
-                )}
-                </tbody>
-            </table>
-
-            {/* Пагинация */}
-            <div className="pagination-container">
-                <button
-                    className="btn btn-secondary"
-                    disabled={currentPage <= 0}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                    Назад
-                </button>
-                <span>
-                    Страница {currentPage + 1} из {totalPages}
-                </span>
-                <button
-                    className="btn btn-secondary"
-                    disabled={currentPage >= totalPages - 1}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                    Вперед
-                </button>
-            </div>
-
-            {/* Попап добавления машины */}
+            {/* Всплывающее окно */}
             {showPopup && (
-                <div className="popup">
-                    <div className="popup-inner">
-                        <h3>Добавить новую машину</h3>
+                <div className="popup-overlay">
+                    <div className="popup">
+                        <h3>Добавить новое объявление</h3>
                         <input
                             type="text"
                             placeholder="VIN"
                             value={newCar.vin}
-                            onChange={(e) => setNewCar({ ...newCar, vin: e.target.value })}
                         />
                         <input
                             type="text"
-                            placeholder="Бренд"
+                            placeholder="Марка"
                             value={newCar.brand}
                             onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
                         />
@@ -198,68 +197,76 @@ function CarsPage() {
                             value={newCar.mileage}
                             onChange={(e) => setNewCar({ ...newCar, mileage: e.target.value })}
                         />
-                        <button className="btn btn-primary" onClick={handleAddCar}>
-                            Добавить
-                        </button>
-                        <button className="btn btn-danger" onClick={() => setShowPopup(false)}>
-                            Отмена
-                        </button>
-
-                        {errorMessage && (
-                            <div className="error-message">
-                                <p>{errorMessage}</p>
-                            </div>
-                        )}
+                        {errorMessage && <div className="error-message">{errorMessage}</div>}
+                        <div className="popup-buttons">
+                            <button className="btn btn-success" onClick={handleAddCar}>
+                                Добавить
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => setShowPopup(false)}>
+                                Отмена
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            <style>{`
-                .error-message {
-                    color: red;
-                    font-weight: bold;
-                    margin-top: 10px;
-                }
-            `}</style>
+            <table className="table table-bordered">
+                <thead>
+                <tr>
+                    <th>VIN</th>
+                    <th>Бренд</th>
+                    <th>Модель</th>
+                    <th>Год</th>
+                    <th>Цена</th>
+                    <th>Пробег</th>
+                    <th>Статус</th>
+                    <th>Создано</th>
+                </tr>
+                </thead>
+                <tbody>
+                {cars.length > 0 ? (
+                    cars.map((car, index) => {
+                        const details = carDetails[car.carId];
+                        return (
+                            <tr key={index}>
+                                <td>{details ? details.vin : "Загрузка..."}</td>
+                                <td>{details ? details.brand : "Загрузка..."}</td>
+                                <td>{details ? details.model : "Загрузка..."}</td>
+                                <td>{details ? details.year : "Загрузка..."}</td>
+                                <td>{details ? `${formatPrice(details.price)} ₽` : "Загрузка..."}</td>
+                                <td>{details ? `${details.mileage} км` : "Загрузка..."}</td>
+                                <td>{car.status}</td>
+                                <td>{car.createdAt ? formatDate(car.createdAt) : "Загрузка..."}</td>
+                            </tr>
+                        );
+                    })
+                ) : (
+                    <tr>
+                        <td colSpan="7">Машины не найдены</td>
+                    </tr>
+                )}
+                </tbody>
+            </table>
 
-            <style>{`
-                .popup {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                .popup-inner {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-                .popup-inner input {
-                    padding: 8px;
-                    font-size: 16px;
-                    width: 100%;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                }
-                .popup-inner button {
-                    margin-top: 10px;
-                }
-                .popup-inner .error-message {
-                    color: red;
-                    font-size: 14px;
-                }
-                .button-container { margin-bottom: 20px; }
-                .button-container .btn { margin-right: 10px; }
-            `}</style>
+            <div className="pagination-container">
+                <button
+                    className="btn btn-secondary"
+                    disabled={currentPage <= 0}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                    Назад
+                </button>
+                <span>
+                    Страница {currentPage + 1} из {totalPages}
+                </span>
+                <button
+                    className="btn btn-secondary"
+                    disabled={currentPage >= totalPages - 1}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                    Вперед
+                </button>
+            </div>
         </div>
     );
 }
