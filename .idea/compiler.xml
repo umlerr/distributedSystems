@@ -65,7 +65,7 @@
       <module name="jwt_lib" options="-parameters" />
       <module name="service-auth" options="-parameters" />
       <module name="service-cars" options="-parameters" />
-      <module name="service-listings" options="" />
+      <module name="service-listings" options="-parameters" />
     </option>
   </component>
 </project>

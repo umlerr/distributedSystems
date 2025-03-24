@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 function CarsPage() {
     const [cars, setCars] = useState([]);
     const [carDetails, setCarDetails] = useState({});
-    const [vinSuggestions, setVinSuggestions] = useState([]);
-    const [isVinExist, setIsVinExist] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [totalCars, setTotalCars] = useState(0);
@@ -30,7 +28,7 @@ function CarsPage() {
         try {
             const token = localStorage.getItem("authToken");
             if (!token) {
-                navigate("/");
+                navigate("/"); // Redirect to login if there's no token
                 return;
             }
 
@@ -59,7 +57,7 @@ function CarsPage() {
         try {
             const token = localStorage.getItem("authToken");
             if (!token) {
-                navigate("/");
+                navigate("/"); // Redirect to login if there's no token
                 return;
             }
 
@@ -83,13 +81,12 @@ function CarsPage() {
     };
 
     const handleAddCar = async (e) => {
-        e.preventDefault(); // Останавливаем перезагрузку страницы
-
-        setErrorMessage(""); // Очистка предыдущей ошибки перед новой попыткой
+        e.preventDefault(); // Prevent the form from submitting and refreshing the page
+        setErrorMessage(""); // Clear any previous error messages
         try {
             const token = localStorage.getItem("authToken");
             if (!token) {
-                navigate("/");
+                navigate("/"); // Redirect to login if there's no token
                 return;
             }
 
@@ -103,27 +100,24 @@ function CarsPage() {
             });
 
             if (!response.ok) {
-                // Если сервер вернул ошибку, извлекаем текст ошибки
-                const errorText = await response.text();
-
-                // Если код ответа 409 (Conflict), то выводим ошибку, что VIN уже существует
                 if (response.status === 409) {
-                    setErrorMessage(errorText || "Машина с таким VIN номером уже существует");
+                    // If VIN already exists (409 Conflict), display the specific error
+                    setErrorMessage("Ошибка: Машина с таким VIN номером уже существует.");
                 } else {
-                    // Для других ошибок показываем стандартное сообщение
-                    throw new Error(errorText || "Произошла неизвестная ошибка.");
+                    // For other errors, display a general error message
+                    const errorText = await response.text();
+                    throw new Error(errorText);
                 }
             } else {
-                // Если все успешно
+                // If the car was successfully added, reset the form and close the popup
                 setShowPopup(false);
                 setNewCar({ vin: "", brand: "", model: "", price: "", year: "", mileage: "" });
-                fetchCars(currentPage, pageSize);
+                fetchCars(currentPage, pageSize); // Refresh the list of cars
             }
         } catch (error) {
+            // Catch any other errors and display a generic error message
+            setErrorMessage("Ошибка при добавлении объявления. Попробуйте снова.");
             console.error("Ошибка:", error);
-            if (!errorMessage) {
-                setErrorMessage("Произошла ошибка при добавлении автомобиля.");
-            }
         }
     };
 
@@ -131,7 +125,6 @@ function CarsPage() {
         localStorage.removeItem("authToken");
         navigate("/");
     };
-
 
     const totalPages = Math.ceil(totalCars / pageSize);
 
@@ -162,50 +155,77 @@ function CarsPage() {
                 <div className="popup-overlay">
                     <div className="popup">
                         <h3>Добавить новое объявление</h3>
-                        <input
-                            type="text"
-                            placeholder="VIN"
-                            value={newCar.vin}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Марка"
-                            value={newCar.brand}
-                            onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Модель"
-                            value={newCar.model}
-                            onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Цена"
-                            value={newCar.price}
-                            onChange={(e) => setNewCar({ ...newCar, price: e.target.value })}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Год"
-                            value={newCar.year}
-                            onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Пробег"
-                            value={newCar.mileage}
-                            onChange={(e) => setNewCar({ ...newCar, mileage: e.target.value })}
-                        />
-                        {errorMessage && <div className="error-message">{errorMessage}</div>}
-                        <div className="popup-buttons">
-                            <button className="btn btn-success" onClick={handleAddCar}>
-                                Добавить
-                            </button>
-                            <button className="btn btn-secondary" onClick={() => setShowPopup(false)}>
-                                Отмена
-                            </button>
-                        </div>
+                        <form onSubmit={handleAddCar}>
+                            <input
+                                type="text"
+                                placeholder="VIN"
+                                value={newCar.vin}
+                                onChange={(e) => setNewCar({ ...newCar, vin: e.target.value })}
+                                pattern="^[A-HJ-NPR-Z0-9]{17}$"
+                                title="VIN номер должен содержать 17 символов, исключая I, O, Q"
+                                required
+                            />
+                            <input
+                                type="text"
+                                placeholder="Марка"
+                                value={newCar.brand}
+                                onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
+                                pattern="^[A-Za-z\s]{1,20}$"
+                                title="Бренд не должен содержать цифры и должен быть не более 20 символов"
+                                required
+                            />
+                            <input
+                                type="text"
+                                placeholder="Модель"
+                                value={newCar.model}
+                                onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
+                                pattern="^[A-Za-z0-9\s]{1,20}$"
+                                title="Модель должна быть не более 20 символов и может содержать цифры"
+                                required
+                            />
+                            <input
+                                type="number"
+                                placeholder="Цена"
+                                value={newCar.price}
+                                onChange={(e) => setNewCar({ ...newCar, price: e.target.value })}
+                                pattern="^[0-9]{1,20}$"
+                                title="Цена должна быть числом и не более 20 символов"
+                                required
+                            />
+                            <input
+                                type="number"
+                                placeholder="Год"
+                                value={newCar.year}
+                                onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
+                                min="1885"
+                                max="2025"
+                                title="Год выпуска не может быть раньше 1885 и не позже 2025"
+                                required
+                            />
+                            <input
+                                type="number"
+                                placeholder="Пробег"
+                                value={newCar.mileage}
+                                onChange={(e) => setNewCar({ ...newCar, mileage: e.target.value })}
+                                pattern="^[0-9]{1,8}$"
+                                title="Пробег должен быть числом и не более 8 цифр"
+                                required
+                            />
+                            {/* Display error message if there's any */}
+                            {errorMessage && <div className="error-message">{errorMessage}</div>}
+                            <div className="popup-buttons">
+                                <button className="btn btn-success" type="submit">
+                                    Добавить
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    type="button"
+                                    onClick={() => setShowPopup(false)}
+                                >
+                                    Отмена
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
