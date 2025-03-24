@@ -48,6 +48,7 @@ function CarsPage() {
             setCars(carsData.content || []);
             setTotalCars(carsData.totalElements);
             carsData.content.forEach((car) => fetchCarDetails(car.carId));
+            carsData.content.forEach((car) => fetchUserDetails(car.userId));
         } catch (error) {
             console.error("Ошибка при получении списка машин:", error);
         }
@@ -74,9 +75,37 @@ function CarsPage() {
             }
 
             const carData = await response.json();
+
             setCarDetails((prevDetails) => ({ ...prevDetails, [carId]: carData }));
         } catch (error) {
             console.error(`Ошибка при получении данных машины ${carId}:`, error);
+        }
+    };
+
+    const fetchUserDetails = async (userId) => {
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                navigate("/");
+                return;
+            }
+
+            const response = await fetch(
+                `http://localhost:8080/api/auth/v1/user-by-id/${userId}`,
+                {
+                    method: "GET",
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const carData = await response.json();
+            setCarDetails((prevDetails) => ({ ...prevDetails, [userId]: carData }));
+        } catch (error) {
+            console.error(`Ошибка при получении данных пользователя ${userId}:`, error);
         }
     };
 
@@ -239,6 +268,8 @@ function CarsPage() {
                     <th>Год</th>
                     <th>Цена</th>
                     <th>Пробег</th>
+                    <th>Имя владельца</th>
+                    <th>Телефон</th>
                     <th>Статус</th>
                     <th>Создано</th>
                 </tr>
@@ -247,6 +278,7 @@ function CarsPage() {
                 {cars.length > 0 ? (
                     cars.map((car, index) => {
                         const details = carDetails[car.carId];
+                        const userDetails = carDetails[car.userId];
                         return (
                             <tr key={index}>
                                 <td>{details ? details.vin : "Загрузка..."}</td>
@@ -255,6 +287,8 @@ function CarsPage() {
                                 <td>{details ? details.year : "Загрузка..."}</td>
                                 <td>{details ? `${formatPrice(details.price)} ₽` : "Загрузка..."}</td>
                                 <td>{details ? `${details.mileage} км` : "Загрузка..."}</td>
+                                <td>{userDetails ? userDetails.name : "Загрузка..."}</td>
+                                <td>{userDetails ? userDetails.phone : "Загрузка..."}</td>
                                 <td>{car.status}</td>
                                 <td>{car.createdAt ? formatDate(car.createdAt) : "Загрузка..."}</td>
                             </tr>
