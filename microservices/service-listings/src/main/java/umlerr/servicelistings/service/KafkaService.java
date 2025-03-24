@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import umlerr.jwt.JWTService;
 import umlerr.servicelistings.model.Listing;
 
 @Service
@@ -26,6 +27,7 @@ import umlerr.servicelistings.model.Listing;
 public class KafkaService {
     private final ListingsService listingService;
     private final RestTemplate restTemplate;
+    private final JWTService jwtService;
     private static final Logger log = LoggerFactory.getLogger(KafkaService.class);
 
     @KafkaListener(topics = "cars-topic", groupId = "listing-group")
@@ -38,7 +40,8 @@ public class KafkaService {
             String token = carData.get("token").asText();
 
             UUID carUUID = UUID.fromString(carId);
-            String url = "http://localhost:8081/api/cars/v1/car/" + carUUID;
+            UUID userID = UUID.fromString(jwtService.extractUserId(token));
+            String url = "http://localhost:8081/api/cars/v1/car-by-id/" + carUUID;
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + token);
@@ -61,6 +64,7 @@ public class KafkaService {
 
             Listing listing = new Listing();
             listing.setCarId(carUUID);
+            listing.setUserId(userID);
             listingService.addListing(listing);
 
         } catch (HttpClientErrorException.NotFound e) {

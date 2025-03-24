@@ -1,6 +1,8 @@
 package umlerr.serviceauth.service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,22 +61,30 @@ public class AuthService implements UserDetailsService {
         authRepository.save(users);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Users> getAllUsers() {
         return authRepository.findAll();
     }
 
-    public String generateToken(String email) {
-        return jwtService.generateToken(email);
+    @Transactional(readOnly = true)
+    public Optional<Users> getUserById(String userId) {
+        return authRepository.findById(UUID.fromString(userId));
+    }
+
+    public String generateToken(String userId) {
+        return jwtService.generateToken(userId);
     }
 
     public String verify(AuthDTO authDTO) {
         try {
+            Optional<Users> user = authRepository.findByEmail(authDTO.getEmail());
+            UUID userId = user.map(Users::getId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             Authentication authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authDTO.getEmail(),
                     authDTO.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            return generateToken(authDTO.getEmail());
+            return generateToken(String.valueOf(userId));
         } catch (BadCredentialsException e) {
             throw e;
         }

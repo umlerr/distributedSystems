@@ -31,30 +31,30 @@ public class JWTFilter extends OncePerRequestFilter {
     ) {
         final String requestTokenHeader = request.getHeader(HEADER_STRING);
 
-        String email = null;
+        String userId = null;
         String jwtToken = null;
 
         if (requestTokenHeader != null && requestTokenHeader.startsWith(TOKEN_PREFIX)) {
             jwtToken = requestTokenHeader.replace(TOKEN_PREFIX, "");
-            email = jwtService.extractEmail(jwtToken);
+            userId = jwtService.extractUserId(jwtToken);
         } else {
             logger.warn("JWT Token does not begin with Bearer String");
         }
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtService.validateToken(jwtToken, email)) {
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (jwtService.validateToken(jwtToken, userId)) {
                 Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
                 if (existingAuth == null) {
                     SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ADMIN");
 
-                    UsernamePasswordAuthenticationToken emailPasswordAuthenticationToken =
+                    UsernamePasswordAuthenticationToken userIdPasswordAuthenticationToken =
                         new UsernamePasswordAuthenticationToken(
-                            email, null, List.of(authority));
+                            userId, null, List.of(authority));
 
-                    emailPasswordAuthenticationToken.setDetails(
+                    userIdPasswordAuthenticationToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    SecurityContextHolder.getContext().setAuthentication(emailPasswordAuthenticationToken);
+                    SecurityContextHolder.getContext().setAuthentication(userIdPasswordAuthenticationToken);
                 }
             }
         }

@@ -18,9 +18,9 @@ public class JWTService {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    public String generateToken(String email) {
-        return Jwts.builder().claim("email", email)
-            .subject(email)
+    public String generateToken(String userId) {
+        return Jwts.builder().claim("userId", userId)
+            .subject(userId)
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
             .signWith(jwtSecretKey())
@@ -32,7 +32,7 @@ public class JWTService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String extractEmail(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -49,9 +49,9 @@ public class JWTService {
             .getPayload();
     }
 
-    public boolean validateToken(String token, String email) {
-        final String email_from_token = extractEmail(token);
-        return (email_from_token.equals(email) && !isTokenExpired(token));
+    public boolean validateToken(String token, String userId) {
+        final String userId_from_token = extractUserId(token);
+        return (userId_from_token.equals(userId) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {
