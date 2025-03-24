@@ -57,7 +57,12 @@ public class CarsService {
     public void updateCar(UUID id, CarDTO carDTO) {
         Car car = carsRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException(getCarNotFound(id)));
-        carMapper.updateEntityFromDTO(carDTO, car);
+        if (carDTO.getPrice() != null) {
+            car.setPrice(carDTO.getPrice());
+        }
+        if (carDTO.getMileage() != null) {
+            car.setMileage(carDTO.getMileage());
+        }
         carsRepository.save(car);
     }
 

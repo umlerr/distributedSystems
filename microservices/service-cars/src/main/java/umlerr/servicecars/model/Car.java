@@ -31,7 +31,7 @@ public class Car {
 
     private String model;
 
-    private String price;
+    private Double price;
 
     private Integer year;
 
