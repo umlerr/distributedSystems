@@ -9,6 +9,11 @@ function CarsPage() {
     const [totalCars, setTotalCars] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    const [searchVIN, setSearchVIN] = useState("");
+    const [suggestedVIN, setSuggestedVIN] = useState("");
+    const [vinList, setVinList] = useState([]);
+
     const [newCar, setNewCar] = useState({
         vin: "",
         brand: "",
@@ -22,6 +27,7 @@ function CarsPage() {
 
     useEffect(() => {
         fetchCars(currentPage, pageSize);
+        fetchVinNumbers(); // Загружаем VIN номера при загрузке
     }, [currentPage, pageSize]);
 
     const fetchCars = async (page, size) => {
@@ -51,6 +57,50 @@ function CarsPage() {
             carsData.content.forEach((car) => fetchUserDetails(car.userId));
         } catch (error) {
             console.error("Ошибка при получении списка машин:", error);
+        }
+    };
+
+    const fetchVinNumbers = async () => {
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                navigate("/"); // Если нет токена — отправляем на логин
+                return;
+            }
+
+            console.log("Запрос VIN номеров...");
+
+            const response = await fetch("http://localhost:8081/api/cars/v1/all-vin", {
+                method: "GET",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) throw new Error("Ошибка загрузки VIN номеров");
+
+            const vins = await response.json();
+
+            console.log("VIN номера получены:", vins); // Проверяем, какие VIN номера загружаем
+
+            setVinList(vins);
+            localStorage.setItem("vinList", JSON.stringify(vins));
+        } catch (error) {
+            console.error("Ошибка при загрузке VIN номеров:", error);
+        }
+    };
+
+    const handleSearch = (e) => {
+        const value = e.target.value.toUpperCase();
+        setSearchVIN(value);
+
+        console.log("Пользователь ввел:", value);
+        console.log("VIN список в памяти:", vinList);
+
+        if (value.length > 0) {
+            const foundVIN = vinList.find((vin) => vin.startsWith(value)) || "";
+            console.log("Найден VIN для автодополнения:", foundVIN);
+            setSuggestedVIN(foundVIN);
+        } else {
+            setSuggestedVIN("");
         }
     };
 
@@ -170,6 +220,23 @@ function CarsPage() {
         <div className="container">
             <h2>Список объявлений</h2>
 
+            {/* Поле поиска VIN */}
+            <div className="position-relative mx-auto" style={{maxWidth: "300px"}}>
+                <input
+                    type="text"
+                    placeholder="Введите VIN"
+                    value={searchVIN}
+                    onChange={handleSearch}
+                    className="form-control search-input"
+                />
+                {suggestedVIN && searchVIN && (
+                    <div className="autocomplete-suggestion">
+                        <span className="typed-text">{searchVIN}</span>
+                        <span className="suggestion-text">{suggestedVIN.slice(searchVIN.length)}</span>
+                    </div>
+                )}
+            </div>
+
             <div className="button-container">
                 <button className="btn btn-success" onClick={() => setShowPopup(true)}>
                     Добавить объявление
@@ -183,13 +250,13 @@ function CarsPage() {
             {showPopup && (
                 <div className="popup-overlay">
                     <div className="popup">
-                        <h3>Добавить новое объявление</h3>
+                    <h3>Добавить новое объявление</h3>
                         <form onSubmit={handleAddCar}>
                             <input
                                 type="text"
                                 placeholder="VIN"
                                 value={newCar.vin}
-                                onChange={(e) => setNewCar({ ...newCar, vin: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, vin: e.target.value})}
                                 pattern="^[A-HJ-NPR-Z0-9]{17}$"
                                 title="VIN номер должен содержать 17 символов, исключая I, O, Q"
                                 required
@@ -198,7 +265,7 @@ function CarsPage() {
                                 type="text"
                                 placeholder="Марка"
                                 value={newCar.brand}
-                                onChange={(e) => setNewCar({ ...newCar, brand: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, brand: e.target.value})}
                                 pattern="^[A-Za-z\s]{1,20}$"
                                 title="Бренд не должен содержать цифры и должен быть не более 20 символов"
                                 required
@@ -207,7 +274,7 @@ function CarsPage() {
                                 type="text"
                                 placeholder="Модель"
                                 value={newCar.model}
-                                onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, model: e.target.value})}
                                 pattern="^[A-Za-z0-9\s]{1,20}$"
                                 title="Модель должна быть не более 20 символов и может содержать цифры"
                                 required
@@ -216,7 +283,7 @@ function CarsPage() {
                                 type="number"
                                 placeholder="Цена"
                                 value={newCar.price}
-                                onChange={(e) => setNewCar({ ...newCar, price: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, price: e.target.value})}
                                 pattern="^[0-9]{1,20}$"
                                 title="Цена должна быть числом и не более 20 символов"
                                 required
@@ -225,7 +292,7 @@ function CarsPage() {
                                 type="number"
                                 placeholder="Год"
                                 value={newCar.year}
-                                onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, year: e.target.value})}
                                 min="1885"
                                 max="2025"
                                 title="Год выпуска не может быть раньше 1885 и не позже 2025"
@@ -235,7 +302,7 @@ function CarsPage() {
                                 type="number"
                                 placeholder="Пробег"
                                 value={newCar.mileage}
-                                onChange={(e) => setNewCar({ ...newCar, mileage: e.target.value })}
+                                onChange={(e) => setNewCar({...newCar, mileage: e.target.value})}
                                 pattern="^[0-9]{1,8}$"
                                 title="Пробег должен быть числом и не более 8 цифр"
                                 required

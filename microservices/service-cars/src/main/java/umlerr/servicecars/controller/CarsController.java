@@ -1,6 +1,6 @@
 package umlerr.servicecars.controller;
 
-import lombok.AllArgsConstructor;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -12,14 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import umlerr.servicecars.dto.CarDTO;
 import umlerr.servicecars.model.Car;
 import umlerr.servicecars.service.CarsService;
-import java.util.List;
-import java.util.UUID;
 import static umlerr.servicecars.util.CarsUtils.getCarAdded;
 import static umlerr.servicecars.util.CarsUtils.getCarDeleted;
 import static umlerr.servicecars.util.CarsUtils.getCarEdited;
@@ -40,7 +37,8 @@ public class CarsController {
     }
 
     @GetMapping("/cars/by-brand/{brand}")
-    public ResponseEntity<?> getCarsByBrand(@PathVariable String brand,
+    public ResponseEntity<?> getCarsByBrand(
+        @PathVariable String brand,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size
     ) {
@@ -69,7 +67,10 @@ public class CarsController {
     }
 
     @PostMapping("/add-car")
-    public ResponseEntity<?> addCar(@RequestBody CarDTO carDTO, @RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> addCar(
+        @RequestBody CarDTO carDTO,
+        @RequestHeader("Authorization") String authorizationHeader
+    ) {
         carsService.addCar(carDTO, authorizationHeader);
         return ResponseEntity.status(HttpStatus.CREATED).body(getCarAdded(carDTO.getBrand() + " " + carDTO.getModel()));
     }
