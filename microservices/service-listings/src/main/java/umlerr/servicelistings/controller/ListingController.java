@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import umlerr.servicelistings.dto.AddingDTO;
 import umlerr.servicelistings.dto.ListingDTO;
 import umlerr.servicelistings.model.Listing;
 import umlerr.servicelistings.service.ListingsService;
 import java.util.UUID;
+import static umlerr.servicelistings.util.ListingsUtils.getListingAdded;
 import static umlerr.servicelistings.util.ListingsUtils.getListingDeleted;
 import static umlerr.servicelistings.util.ListingsUtils.getListingEdited;
 
@@ -41,11 +43,21 @@ public class ListingController {
         return ResponseEntity.status(HttpStatus.OK).body(listingsService.getListingsCount());
     }
 
+    @PostMapping("/add-listing")
+    public ResponseEntity<?> addListing(@RequestBody AddingDTO addingDTO) {
+        listingsService.addListing(addingDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(getListingAdded(addingDTO.getCarID()));
+    }
+
     @GetMapping("/listing/{id}")
     public ResponseEntity<?> getListingById(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(listingsService.getListingById(id));
     }
 
+    @GetMapping("/listing-by-car/{carId}")
+    public ResponseEntity<?> getListingByCar(@PathVariable UUID carId) {
+        return ResponseEntity.status(HttpStatus.OK).body(listingsService.getListingByCar(carId));
+    }
 
     @PutMapping("/update-listing/{id}")
     public ResponseEntity<?> updateListing(@PathVariable UUID id, @RequestBody ListingDTO listingDTO) {

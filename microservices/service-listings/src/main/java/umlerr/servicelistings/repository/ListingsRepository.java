@@ -1,5 +1,6 @@
 package umlerr.servicelistings.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -14,4 +15,5 @@ public interface ListingsRepository extends JpaRepository<Listing, UUID> {
     @NonNull
     Page<Listing> findAll(@NonNull Pageable pageable);
 
+    Optional<Listing> findByCarId(UUID carId);
 }

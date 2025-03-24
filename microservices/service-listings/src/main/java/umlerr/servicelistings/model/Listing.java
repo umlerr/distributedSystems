@@ -29,6 +29,8 @@ public class Listing {
 
     private UUID carId;
 
+    private UUID userId;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

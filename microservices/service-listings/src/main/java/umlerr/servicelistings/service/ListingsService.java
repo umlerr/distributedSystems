@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import umlerr.servicelistings.dto.AddingDTO;
 import umlerr.servicelistings.dto.ListingDTO;
 import umlerr.servicelistings.dto.ListingMapper;
 import umlerr.servicelistings.model.Listing;
@@ -34,6 +35,20 @@ public class ListingsService {
     public Listing getListingById(UUID id) {
         return listingsRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException(getListingNotFound(id)));
+    }
+
+    @Transactional(readOnly = true)
+    public Listing getListingByCar(UUID carId) {
+        return listingsRepository.findByCarId(carId)
+            .orElseThrow(() -> new NoSuchElementException(getListingNotFound(carId)));
+    }
+
+    @Transactional
+    public void addListing(AddingDTO addingDTO) {
+        Listing listing = new Listing();
+        listing.setCarId(addingDTO.getCarID());
+        listing.setUserId(addingDTO.getUserID());
+        listingsRepository.save(listing);
     }
 
     @Transactional
